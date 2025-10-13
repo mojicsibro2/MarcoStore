@@ -10,6 +10,7 @@ import { User, UserRole } from '../../../shared/entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from '../dto/create-user.dto';
+import { PaginationDto } from 'src/shared/dto/pagination.dto';
 
 @Injectable()
 export class UsersService {
@@ -54,12 +55,35 @@ export class UsersService {
     return this.userRepository.findOne({ where: { id } });
   }
 
-  async findAll() {
-    return this.userRepository.find();
+  async findAll(pagination: PaginationDto) {
+    const page = pagination.page || 1;
+    const pageSize = pagination.pageSize || 10;
+    const skip = (page - 1) * pageSize;
+    const [users, totalUsers] = await this.userRepository.findAndCount({
+      skip,
+      take: pageSize,
+      order: { createdAt: 'DESC' },
+    });
+    const totalPage = Math.ceil(totalUsers / pageSize);
+    const currentPage = skip / pageSize + 1;
+
+    return { totalUsers, totalPage, currentPage, users };
   }
 
-  async findPendingUsers() {
-    return this.userRepository.find({ where: { role: UserRole.PENDING } });
+  async findPendingUsers(pagination: PaginationDto) {
+    const page = pagination.page || 1;
+    const pageSize = pagination.pageSize || 10;
+    const skip = (page - 1) * pageSize;
+    const [users, totalUsers] = await this.userRepository.findAndCount({
+      where: { role: UserRole.PENDING },
+      skip,
+      take: pageSize,
+      order: { createdAt: 'DESC' },
+    });
+    const totalPage = Math.ceil(totalUsers / pageSize);
+    const currentPage = skip / pageSize + 1;
+
+    return { totalUsers, totalPage, currentPage, users };
   }
 
   async findByEmail(email: string) {
@@ -80,6 +104,28 @@ export class UsersService {
 
     user.role = user.desiredRole;
     user.desiredRole = null; // clear after activation
+    await this.userRepository.save(user);
+
+    return {
+      message: `User activated successfully as ${user.role}`,
+      user,
+    };
+  }
+
+  async deactivateUser(id: string) {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.role == UserRole.PENDING) {
+      throw new BadRequestException('User already in Pending');
+    }
+
+    if (user.desiredRole) {
+      throw new BadRequestException('desired role set for this user');
+    }
+
+    user.desiredRole = user.role;
+    user.role = UserRole.PENDING; // clear after activation
     await this.userRepository.save(user);
 
     return {

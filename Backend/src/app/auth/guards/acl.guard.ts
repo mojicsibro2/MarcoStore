@@ -31,8 +31,10 @@ export class AclGuard implements CanActivate {
     if (user.role === UserRole.ADMIN) return true;
 
     // 2) Check Roles metadata
-    const allowedRoles =
-      this.reflector.get<UserRole[]>(ROLES_KEY, ctx.getHandler()) || [];
+    const allowedRoles = this.reflector.getAllAndOverride<UserRole[]>(
+      ROLES_KEY,
+      [ctx.getHandler(), ctx.getClass()],
+    );
     if (allowedRoles.length && !allowedRoles.includes(user.role)) {
       throw new ForbiddenException('Role not permitted');
     }

@@ -26,6 +26,9 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column()
+  name: string;
+
   @Column({ unique: true })
   email: string;
 
@@ -39,11 +42,15 @@ export class User {
   })
   role: UserRole;
 
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    nullable: true,
+  })
+  desiredRole?: UserRole | null;
+
   @OneToMany(() => Cart, (cart) => cart.customer)
   carts: Cart[];
-
-  @Column()
-  name: string;
 
   @OneToMany(() => Product, (product) => product.supplier)
   products: Product[];

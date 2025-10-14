@@ -67,7 +67,14 @@ export class UsersService {
     const totalPage = Math.ceil(totalUsers / pageSize);
     const currentPage = skip / pageSize + 1;
 
-    return { totalUsers, totalPage, currentPage, users };
+    return {
+      data: users,
+      meta: {
+        total: totalUsers,
+        currentPage,
+        lastPage: totalPage,
+      },
+    };
   }
 
   async findPendingUsers(pagination: PaginationDto) {
@@ -83,7 +90,14 @@ export class UsersService {
     const totalPage = Math.ceil(totalUsers / pageSize);
     const currentPage = skip / pageSize + 1;
 
-    return { totalUsers, totalPage, currentPage, users };
+    return {
+      data: users,
+      meta: {
+        total: totalUsers,
+        currentPage,
+        lastPage: totalPage,
+      },
+    };
   }
 
   async findByEmail(email: string) {

@@ -23,10 +23,17 @@ async function bootstrap() {
     defaultVersion: '1',
   });
 
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+      whitelist: true,
+    }),
+  );
+
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   app.useGlobalInterceptors(new HttpResponseInterceptor());
-  app.useGlobalPipes(new ValidationPipe());
 
   // ✅ Swagger Configuration
   const config = new DocumentBuilder()

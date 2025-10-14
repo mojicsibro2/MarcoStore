@@ -35,19 +35,21 @@ export class CategoryService {
    */
   async findAll(pagination: PaginationDto) {
     const { page = 1, pageSize = 10 } = pagination;
+    const skip = (page - 1) * pageSize;
 
     const [data, total] = await this.categoryRepository.findAndCount({
-      skip: (page - 1) * pageSize,
+      skip,
       take: pageSize,
       order: { name: 'ASC' },
     });
-
+    const lastPage = Math.ceil(total / pageSize);
+    const currentPage = skip / pageSize + 1;
     return {
       data,
       meta: {
         total,
-        page,
-        lastPage: Math.ceil(total / pageSize),
+        currentPage,
+        lastPage,
       },
     };
   }

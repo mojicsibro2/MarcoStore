@@ -15,6 +15,12 @@ export class DeliveryMode {
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   fee: number;
 
+  @Column({ nullable: true })
+  estimatedTime: string; // e.g. "2-3 business days"
+
+  @Column({ default: true })
+  isActive: boolean;
+
   @OneToMany(() => Order, (order) => order.deliveryMode)
   orders: Order[];
 }

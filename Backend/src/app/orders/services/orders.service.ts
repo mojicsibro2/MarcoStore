@@ -39,7 +39,7 @@ export class OrdersService {
         throw new BadRequestException('Cart is empty or not found');
 
       const deliveryMode = await deliveryRepo.findOne({
-        where: { id: deliveryModeId },
+        where: { id: deliveryModeId, isActive: true },
       });
       if (!deliveryMode)
         throw new BadRequestException('Invalid delivery mode selected');

@@ -1,39 +1,40 @@
 import {
   Controller,
-  // Get,
-  // Post,
-  // Body,
-  // Patch,
-  // Param,
-  // Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
 } from '@nestjs/common';
 import { OrdersService } from '../services/orders.service';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
+import { User } from 'src/shared/entities/user.entity';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
+@ApiTags('Orders')
+@ApiBearerAuth()
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  // @Post()
-  // create(@Body() createOrderDto: CreateOrderDto) {
-  //   return this.ordersService.create(createOrderDto);
-  // }
+  @ApiOperation({ summary: 'Checkout and simulate payment' })
+  @Post('checkout')
+  checkout(
+    @CurrentUser() user: User,
+    @Query('deliveryModeId', ParseUUIDPipe) deliveryModeId: string,
+  ) {
+    return this.ordersService.checkout(user, deliveryModeId);
+  }
 
-  // @Get()
-  // findAll() {
-  //   return this.ordersService.findAll();
-  // }
+  @ApiOperation({ summary: 'List all orders (admin or user)' })
+  @Get()
+  findAll(@CurrentUser() user: User) {
+    return this.ordersService.findAll(user);
+  }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.ordersService.findOne(+id);
-  // }
-
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
-  //   return this.ordersService.update(+id, updateOrderDto);
-  // }
-
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.ordersService.remove(+id);
-  // }
+  @ApiOperation({ summary: 'Get order by ID' })
+  @Get(':id')
+  findOne(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.ordersService.findOne(id, user);
+  }
 }

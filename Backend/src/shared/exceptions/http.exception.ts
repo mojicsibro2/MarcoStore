@@ -24,7 +24,7 @@ export class HttpExceptionFilter
     const statusCode = exception.getStatus();
     const exceptionResponse = exception.getResponse();
 
-    let message = (exceptionResponse as any).message;
+    let message = exceptionResponse.message;
 
     // Display Internal Server Error as error message if err is 500
     if (statusCode >= HttpStatus.INTERNAL_SERVER_ERROR) {

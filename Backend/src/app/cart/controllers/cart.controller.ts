@@ -1,43 +1,53 @@
 import {
   Controller,
-  // Get,
-  // Post,
-  // Body,
-  // Patch,
-  // Param,
-  // Delete,
+  Post,
+  Body,
+  Delete,
+  Param,
+  Patch,
+  Get,
+  UseGuards,
 } from '@nestjs/common';
-
-// import { CreateCartDto } from '../dto/create-cart.dto';
-// import { UpdateCartDto } from '../dto/update-cart.dto';
 import { CartService } from '../services/cart.service';
+import { AddToCartDto } from '../dto/add-to-cart.dto';
+import { JwtAuthGuard } from 'src/app/auth/guards/jwt-auth.guard';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
+import { User } from 'src/shared/entities/user.entity';
+import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
+import { UpdateCartItemDto } from '../dto/update-cart.dto';
 
+@ApiTags('Cart')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('cart')
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
-  // @Post()
-  // create(@Body() createCartDto: CreateCartDto) {
-  //   return this.cartService.create(createCartDto);
-  // }
+  @ApiOperation({ summary: 'View active cart' })
+  @Get()
+  getCart(@CurrentUser() user: User) {
+    return this.cartService.getActiveCart(user);
+  }
 
-  // @Get()
-  // findAll() {
-  //   return this.cartService.findAll();
-  // }
+  @ApiOperation({ summary: 'Add product to cart' })
+  @Post('add')
+  addToCart(@CurrentUser() user: User, @Body() dto: AddToCartDto) {
+    return this.cartService.addToCart(user, dto);
+  }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.cartService.findOne(+id);
-  // }
+  @ApiOperation({ summary: 'Update item quantity' })
+  @Patch(':itemId')
+  updateItem(
+    @CurrentUser() user: User,
+    @Param('itemId') itemId: string,
+    @Body() dto: UpdateCartItemDto,
+  ) {
+    return this.cartService.updateItemQuantity(user, itemId, dto);
+  }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateCartDto: UpdateCartDto) {
-  //   return this.cartService.update(+id, updateCartDto);
-  // }
-
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.cartService.remove(+id);
-  // }
+  @ApiOperation({ summary: 'Remove product from cart' })
+  @Delete(':itemId')
+  removeItem(@CurrentUser() user: User, @Param('itemId') itemId: string) {
+    return this.cartService.removeItem(user, itemId);
+  }
 }

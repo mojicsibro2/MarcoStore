@@ -11,10 +11,10 @@ import { Product } from './product.entity';
 
 @Entity()
 export class CartItem {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @ManyToOne(() => Cart, (cart) => cart.items)
+  @ManyToOne(() => Cart, (cart) => cart.items, { onDelete: 'CASCADE' })
   cart: Cart;
 
   @ManyToOne(() => Product, { eager: true })
@@ -24,7 +24,7 @@ export class CartItem {
   quantity: number;
 
   @Column('decimal', { precision: 10, scale: 2 })
-  priceAtAdd: number; // store product price at the time added
+  subtotal: number; // store product price at the time added
 
   @CreateDateColumn()
   createdAt: Date;

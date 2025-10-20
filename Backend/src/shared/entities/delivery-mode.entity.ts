@@ -3,8 +3,8 @@ import { Order } from './order.entity';
 
 @Entity()
 export class DeliveryMode {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
   name: string; // e.g. "Standard Shipping", "Express", "In-store Pickup"

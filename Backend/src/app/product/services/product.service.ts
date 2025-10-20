@@ -10,7 +10,7 @@ import { User, UserRole } from 'src/shared/entities/user.entity';
 import { CategoryService } from 'src/app/category/services/category.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product, ProductStatus } from 'src/shared/entities/product.entity';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { PaginationDto } from 'src/shared/dto/pagination.dto';
 import { UploadApiResponse } from 'cloudinary';
 import { ProductImage } from 'src/shared/entities/product-image.entity';
@@ -126,6 +126,11 @@ export class ProductService {
     const product = await this.productRepository.findOne({ where: { id } });
     if (!product) throw new NotFoundException('Product not found');
     return product;
+  }
+  public async findOneByOption(
+    where: FindOptionsWhere<Product>,
+  ): Promise<Product | null> {
+    return await this.productRepository.findOne({ where });
   }
   async update(id: string, dto: UpdateProductDto, user: User) {
     const product = await this.findOne(id);

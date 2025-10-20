@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Order } from './order.entity';
 import { Product } from './product.entity';
 
@@ -18,4 +18,10 @@ export class OrderItem {
 
   @Column('decimal', { precision: 10, scale: 2 })
   price: number;
+
+  @Column('decimal', { precision: 10, scale: 2 })
+  subtotal: number;
+
+  @CreateDateColumn()
+  createdAt: Date;
 }

@@ -5,6 +5,7 @@
 }
 body{
     font-family: "Poppins", sans-serif;
+    background: radial-gradient(#fff, #f0c440);
 }
 .navbar{
     display: flex;
@@ -69,7 +70,8 @@ p{
     background: #563434;
 }
 .header{
-    background: radial-gradient(#fff, #ffd6d6);
+    background: radial-gradient(#fff, #f0c440);
+    border-bottom: 7px dashed rgb(52, 102, 211);
 }
 .header .row{
     margin-top: 70px;
@@ -152,13 +154,14 @@ small {
 .testimonial .col-3{
     text-align: center;
     padding: 40px 20px;
+    background: radial-gradient(#fff, #ffd6d6);
     box-shadow: 0 0 20px 0px rgba(0, 0, 0, 0.1);
     transition: transform .2s;
 }
 .testimonial .col-3 img{
     width: 50px;
     margin-top: 20px;
-    border-radius: 55%;
+    border-radius: 50%;
 }
 .testimonial .col-3:hover{
     transform: translateY(-10px);
@@ -170,7 +173,8 @@ small {
 .col-3 p{
     font-size: 12px;
     margin: 12px 0;
-    color: #777;
+    color: #000;
+    font-size: small;
 }
 .testimonial .col-3 h3{
     font-weight: 600;
@@ -188,7 +192,7 @@ small {
     width: 100%;
 }
 .col-5 img{
-    width: 10%;
+    width: 30%;
     cursor: pointer;
     filter: grayscale(100%);
 }
@@ -391,7 +395,7 @@ th:last-child{
 /* account-page */
 .account-page{
     padding: 50px 0;
-    background: radial-gradient(#fff, #ffd6d6);
+    background: radial-gradient(#fff, #f0c440);
 }
 
 .form-container{

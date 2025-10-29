@@ -11,6 +11,7 @@ import { PaymentModule } from './payment/payment.module';
 import { OrdersModule } from './orders/orders.module';
 import { DeliveryModule } from './delivery/delivery.module';
 import { UsersService } from './users/services/users.service';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { UsersService } from './users/services/users.service';
     PaymentModule,
     OrdersModule,
     DeliveryModule,
+    ReportsModule,
   ],
   controllers: [],
   providers: [],

@@ -14,7 +14,7 @@ export class ReportsService {
     private readonly orderItemRepo: Repository<OrderItem>,
   ) {}
 
-  // 🧾 TOTAL PROFIT (All time)
+  // TOTAL PROFIT (All time)
   async getTotalProfit() {
     const orders = await this.orderRepo.find({
       where: { status: OrderStatus.DELIVERED },
@@ -42,7 +42,7 @@ export class ReportsService {
     };
   }
 
-  // 📆 MONTHLY REPORT (with pagination)
+  // MONTHLY REPORT (with pagination)
   async getMonthlyReport(year: number, month: number, page = 1, pageSize = 10) {
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0);
@@ -87,7 +87,7 @@ export class ReportsService {
     };
   }
 
-  // 🏆 TOP-SELLING PRODUCTS (Paginated)
+  //TOP-SELLING PRODUCTS (Paginated)
   async getTopSellingProducts(page = 1, pageSize = 10) {
     const skip = (page - 1) * pageSize;
 
@@ -181,7 +181,7 @@ export class ReportsService {
     };
   }
 
-  // 💰 SUPPLIER EARNINGS (revenue, profit, etc.)
+  // SUPPLIER EARNINGS (revenue, profit, etc.)
   async getSupplierEarnings(supplierId: string, start?: Date, end?: Date) {
     const query = this.orderItemRepo
       .createQueryBuilder('item')
@@ -211,7 +211,7 @@ export class ReportsService {
     };
   }
 
-  // 💰 SUPPLIER MONTHLY EARNINGS (breakdown by month, with pagination)
+  // SUPPLIER MONTHLY EARNINGS (breakdown by month, with pagination)
   async getSupplierMonthlyEarnings(
     supplierId: string,
     year: number,

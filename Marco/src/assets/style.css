@@ -31,6 +31,67 @@ a{
 p{
     color:#555;
 }
+
+/* Navbar menu default (desktop) */
+.navbar ul {
+  list-style: none;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.navbar ul li a,
+.logout-btn {
+  text-decoration: none;
+  color: #555;
+  font-weight: 500;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  font-size: 16px;
+}
+
+/* Hide menu-icon on large screens */
+.menu-icon {
+  width: 28px;
+  margin-left: 20px;
+  cursor: pointer;
+  display: none;
+}
+
+/* Mobile view */
+@media (max-width: 768px) {
+  .navbar ul {
+    position: absolute;
+    top: 70px;
+    left: 0;
+    background: #fff;
+    width: 100%;
+    max-height: 0;
+    overflow: hidden;
+    flex-direction: column;
+    align-items: center;
+    transition: max-height 0.4s ease;
+  }
+
+  .navbar ul.open {
+    max-height: 300px; /* expands menu */
+  }
+
+  .navbar ul li {
+    margin: 10px 0;
+  }
+
+  .menu-icon {
+    display: block;
+  }
+}
+
 .container{
     max-width: 1300px;
     margin: auto;
@@ -444,6 +505,21 @@ form .btn{
 form .btn:focus{
     outline: none;
 }
+
+.form-btn span.active {
+  color: #ff523b;
+}
+
+.error {
+  color: red;
+  font-size: 12px;
+}
+
+.switch {
+  text-align: center;
+  margin-top: 10px;
+}
+
 
 #LoginForm{
     left: -300px;

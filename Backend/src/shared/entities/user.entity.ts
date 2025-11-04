@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import {
   Column,
   CreateDateColumn,
@@ -26,10 +25,14 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column()
+  name: string;
+
   @Column({ unique: true })
   email: string;
 
   @Column()
+  @Exclude()
   password: string;
 
   @Column({
@@ -39,11 +42,15 @@ export class User {
   })
   role: UserRole;
 
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    nullable: true,
+  })
+  desiredRole?: UserRole | null;
+
   @OneToMany(() => Cart, (cart) => cart.customer)
   carts: Cart[];
-
-  @Column()
-  name: string;
 
   @OneToMany(() => Product, (product) => product.supplier)
   products: Product[];
@@ -54,7 +61,6 @@ export class User {
   @CreateDateColumn({
     name: 'created_at',
   })
-  @Exclude()
   createdAt: Date;
 
   @UpdateDateColumn({
@@ -66,4 +72,5 @@ export class User {
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   @Exclude()
   deletedAt: Date;
+  created_at: any;
 }

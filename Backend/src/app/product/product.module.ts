@@ -7,6 +7,7 @@ import { CategoryModule } from '../category/category.module';
 import { ProductImage } from 'src/shared/entities/product-image.entity';
 import { ConfigModule } from '@nestjs/config';
 import { CloudinaryProvider } from './cloudinary.provider';
+import { CloudinaryService } from './cloudinary.service';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { CloudinaryProvider } from './cloudinary.provider';
     ConfigModule,
   ],
   controllers: [ProductController],
-  providers: [ProductService, CloudinaryProvider],
+  providers: [ProductService, CloudinaryProvider, CloudinaryService],
   exports: [ProductService],
 })
 export class ProductModule {}

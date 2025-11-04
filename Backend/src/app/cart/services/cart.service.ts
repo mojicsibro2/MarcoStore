@@ -91,6 +91,17 @@ export class CartService {
     return this.getActiveCart(user);
   }
 
+  async clearCart(user: User) {
+    const cart = await this.getActiveCart(user);
+    if (!cart.items.length) {
+      return { message: 'Cart is already empty', cart };
+    }
+
+    await this.cartItemRepository.remove(cart.items);
+    await this.recalculateTotal(cart.id);
+    return this.getActiveCart(user);
+  }
+
   async recalculateTotal(cartId: string) {
     const cart = await this.cartRepository.findOne({
       where: { id: cartId },

@@ -3,15 +3,15 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
-  OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Category } from './category.entity';
 import { ProductImage } from './product-image.entity';
-import { Exclude } from 'class-transformer';
 
 export enum ProductStatus {
   PENDING = 'PENDING',
@@ -30,7 +30,6 @@ export class Product {
   @Column({ nullable: true })
   description: string;
 
-  @Exclude()
   @Column('decimal', { precision: 10, scale: 2 })
   basePrice: number;
 
@@ -49,8 +48,13 @@ export class Product {
   @ManyToOne(() => User, (user) => user.products)
   supplier: User;
 
-  @OneToMany(() => ProductImage, (image) => image.product, { cascade: true })
-  images: ProductImage[];
+  @OneToOne(() => ProductImage, {
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn()
+  image: ProductImage;
 
   @CreateDateColumn({
     name: 'created_at',

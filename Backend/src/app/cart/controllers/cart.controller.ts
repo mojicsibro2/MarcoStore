@@ -45,6 +45,12 @@ export class CartController {
     return this.cartService.updateItemQuantity(user, itemId, dto);
   }
 
+  @ApiOperation({ summary: 'Clear all items in the cart' })
+  @Delete('clear')
+  clearCart(@CurrentUser() user: User) {
+    return this.cartService.clearCart(user);
+  }
+
   @ApiOperation({ summary: 'Remove product from cart' })
   @Delete(':itemId')
   removeItem(@CurrentUser() user: User, @Param('itemId') itemId: string) {

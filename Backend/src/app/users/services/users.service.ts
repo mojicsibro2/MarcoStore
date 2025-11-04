@@ -55,24 +55,27 @@ export class UsersService {
     return this.userRepository.findOne({ where: { id } });
   }
 
-  async findAll(pagination: PaginationDto) {
+  async findAll(pagination: PaginationDto, role?: UserRole) {
     const page = pagination.page || 1;
-    const pageSize = pagination.pageSize || 10;
+    const pageSize = pagination.pageSize || 4;
     const skip = (page - 1) * pageSize;
+
+    const where = role ? { role } : {};
+
     const [users, totalUsers] = await this.userRepository.findAndCount({
+      where,
       skip,
       take: pageSize,
       order: { createdAt: 'DESC' },
+      select: ['id', 'name', 'email', 'role', 'desiredRole', 'createdAt'],
     });
-    const totalPage = Math.ceil(totalUsers / pageSize);
-    const currentPage = skip / pageSize + 1;
 
     return {
       data: users,
       meta: {
         total: totalUsers,
-        currentPage,
-        lastPage: totalPage,
+        currentPage: page,
+        lastPage: Math.ceil(totalUsers / pageSize),
       },
     };
   }
@@ -154,22 +157,16 @@ export class UsersService {
     const existingUser = await this.findByEmail(email);
     if (existingUser) throw new BadRequestException('Email already in use');
 
-    if (![UserRole.CUSTOMER, UserRole.SUPPLIER].includes(role)) {
-      throw new BadRequestException(
-        'Only customers or suppliers can self-register',
-      );
-    }
-
     const hashed = await bcrypt.hash(password, 10);
 
     const newUser = await this.create({
       ...data,
       password: hashed,
-      role: role || UserRole.PENDING,
+      role: role || UserRole.CUSTOMER, // or default role if none specified
     });
 
     return {
-      message: 'Registration successful, awaiting admin approval.',
+      message: 'User created successfully.',
       user: {
         id: newUser.id,
         name: newUser.name,

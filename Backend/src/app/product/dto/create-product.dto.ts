@@ -25,7 +25,7 @@ export class CreateProductDto {
   @ApiProperty({ example: 250.5 })
   @IsNumber()
   @Min(0)
-  price: number;
+  basePrice: number;
 
   @ApiProperty({ example: 20 })
   @IsNumber()

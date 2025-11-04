@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Order } from './order.entity';
 import { Product } from './product.entity';
 
@@ -10,7 +16,7 @@ export class OrderItem {
   @ManyToOne(() => Order, (order) => order.items)
   order: Order;
 
-  @ManyToOne(() => Product)
+  @ManyToOne(() => Product, { eager: true, onDelete: 'CASCADE' })
   product: Product;
 
   @Column()

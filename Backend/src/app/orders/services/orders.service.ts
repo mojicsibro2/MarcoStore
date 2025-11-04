@@ -98,12 +98,30 @@ export class OrdersService {
   }
 
   async findAll(user: User) {
+    // If Admin or Employee — get all orders (full view)
     if (user.role === UserRole.ADMIN || user.role === UserRole.EMPLOYEE) {
-      return this.orderRepository.find({ relations: ['customer', 'items'] });
+      return this.orderRepository.find({
+        relations: [
+          'customer',
+          'items',
+          'items.product',
+          'items.product.supplier',
+          'deliveryMode',
+        ],
+        order: { createdAt: 'DESC' },
+      });
     }
+
+    // If Customer — only their own orders (with supplier info)
     return this.orderRepository.find({
       where: { customer: { id: user.id } },
-      relations: ['items', 'items.product'],
+      relations: [
+        'items',
+        'items.product',
+        'items.product.supplier', // ✅ Include supplier info
+        'deliveryMode',
+      ],
+      order: { createdAt: 'DESC' },
     });
   }
 

@@ -20,6 +20,24 @@ export class FilterProductDto {
   category?: string;
 
   @ApiPropertyOptional({
+    example: 100,
+    description: 'Minimum price filter',
+  })
+  @Type(() => Number)
+  @IsOptional()
+  @IsNumber()
+  minPrice?: number;
+
+  @ApiPropertyOptional({
+    example: 500,
+    description: 'Maximum price filter',
+  })
+  @Type(() => Number)
+  @IsOptional()
+  @IsNumber()
+  maxPrice?: number;
+
+  @ApiPropertyOptional({
     example: 1,
     description: 'Page number for pagination',
   })
@@ -38,16 +56,4 @@ export class FilterProductDto {
   @IsNumber()
   @Min(1)
   limit?: number = 10;
-
-  @ApiPropertyOptional({ example: 100, description: 'Minimum price filter' })
-  @Type(() => Number)
-  @IsOptional()
-  @IsNumber()
-  minPrice?: number;
-
-  @ApiPropertyOptional({ example: 500, description: 'Maximum price filter' })
-  @Type(() => Number)
-  @IsOptional()
-  @IsNumber()
-  maxPrice?: number;
 }

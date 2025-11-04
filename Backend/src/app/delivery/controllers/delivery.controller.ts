@@ -15,6 +15,7 @@ import { Roles } from 'src/app/auth/decorators/role.decorator';
 import { UserRole } from 'src/shared/entities/user.entity';
 import { IsValidUUIDPipe } from 'src/shared/pipes/is-valid-uuid.pipe';
 import { DeliveryService } from '../services/delivery.service';
+import { Public } from 'src/shared/decorators/public.decorator';
 
 @ApiTags('Delivery Modes')
 @Controller('deliveries')
@@ -23,12 +24,14 @@ export class DeliveryController {
 
   @ApiOperation({ summary: 'Get all delivery modes' })
   @Get()
+  @Public()
   findAll(@Query('activeOnly') activeOnly?: boolean) {
     return this.deliveriesService.findAll(activeOnly);
   }
 
   @ApiOperation({ summary: 'Get delivery mode by ID' })
   @Get(':id')
+  @Public()
   findOne(@Param('id', IsValidUUIDPipe) id: string) {
     return this.deliveriesService.findOne(id);
   }

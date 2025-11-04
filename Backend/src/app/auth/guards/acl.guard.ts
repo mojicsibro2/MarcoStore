@@ -1,4 +1,3 @@
-// src/auth/acl.guard.ts
 import {
   Injectable,
   CanActivate,
@@ -19,23 +18,25 @@ export class AclGuard implements CanActivate {
       ctx.getHandler(),
       ctx.getClass(),
     ]);
-    if (isPublic) {
-      return true;
-    }
+    if (isPublic) return true;
+
     const req = ctx.switchToHttp().getRequest();
-    const user = req.user as User; // assumed set by your JwtAuthGuard
+    const user = req.user as User;
 
-    if (!user) throw new ForbiddenException();
+    if (!user) throw new ForbiddenException('User not found in request');
 
-    // 1) If super_admin, allow everything
+    // 1️⃣ Allow ADMIN full access
     if (user.role === UserRole.ADMIN) return true;
 
-    // 2) Check Roles metadata
-    const allowedRoles = this.reflector.getAllAndOverride<UserRole[]>(
-      ROLES_KEY,
-      [ctx.getHandler(), ctx.getClass()],
-    );
-    if (allowedRoles.length && !allowedRoles.includes(user.role)) {
+    // 2️⃣ Check roles metadata safely
+    const allowedRoles =
+      this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
+        ctx.getHandler(),
+        ctx.getClass(),
+      ]) || [];
+
+    // 3️⃣ If there are roles defined and user isn’t included
+    if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
       throw new ForbiddenException('Role not permitted');
     }
 

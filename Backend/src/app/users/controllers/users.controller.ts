@@ -12,7 +12,12 @@ import { IsValidUUIDPipe } from '../../../shared/pipes/is-valid-uuid.pipe';
 import { Roles } from 'src/app/auth/decorators/role.decorator';
 import { UserRole } from 'src/shared/entities/user.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { PaginationDto } from 'src/shared/dto/pagination.dto';
 
 @ApiTags('Users')
@@ -22,10 +27,17 @@ import { PaginationDto } from 'src/shared/dto/pagination.dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @ApiOperation({ summary: 'List all users' })
-  @Get('')
-  findAll(@Query() pagination: PaginationDto) {
-    return this.usersService.findAll(pagination);
+  @ApiOperation({ summary: 'List all users (optional role filter)' })
+  @ApiQuery({
+    name: 'role',
+    enum: UserRole,
+    required: false,
+    description:
+      'Filter users by role (admin, employee, customer, supplier, pending)',
+  })
+  @Get()
+  findAll(@Query() query: PaginationDto, @Query('role') role?: UserRole) {
+    return this.usersService.findAll(query, role);
   }
 
   @ApiOperation({ summary: 'List pending users' })

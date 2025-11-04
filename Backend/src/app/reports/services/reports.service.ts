@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { Order } from 'src/shared/entities/order.entity';
 import { OrderStatus } from 'src/shared/entities/order.entity';
 import { OrderItem } from 'src/shared/entities/order-item.entity';
+import { User, UserRole } from 'src/shared/entities/user.entity';
+import { Product, ProductStatus } from 'src/shared/entities/product.entity';
 
 @Injectable()
 export class ReportsService {
@@ -12,12 +14,16 @@ export class ReportsService {
     private readonly orderRepo: Repository<Order>,
     @InjectRepository(OrderItem)
     private readonly orderItemRepo: Repository<OrderItem>,
+    @InjectRepository(Product)
+    private readonly productRepo: Repository<Product>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
   // TOTAL PROFIT (All time)
   async getTotalProfit() {
     const orders = await this.orderRepo.find({
-      where: { status: OrderStatus.DELIVERED },
+      where: { status: OrderStatus.PAID },
       relations: ['items', 'items.product'],
     });
 
@@ -53,7 +59,7 @@ export class ReportsService {
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'items')
       .leftJoinAndSelect('items.product', 'product')
-      .where('order.status = :status', { status: OrderStatus.DELIVERED })
+      .where('order.status = :status', { status: OrderStatus.PAID })
       .andWhere('order.createdAt BETWEEN :start AND :end', { start, end })
       .skip(skip)
       .take(pageSize)
@@ -95,7 +101,7 @@ export class ReportsService {
       .createQueryBuilder('item')
       .leftJoin('item.order', 'order')
       .leftJoin('item.product', 'product')
-      .where('order.status = :status', { status: OrderStatus.DELIVERED })
+      .where('order.status = :status', { status: OrderStatus.PAID })
       .select('product.id', 'productId')
       .addSelect('product.name', 'productName')
       .addSelect('SUM(item.quantity)', 'totalSold')
@@ -110,7 +116,7 @@ export class ReportsService {
     const totalCount = await this.orderItemRepo
       .createQueryBuilder('item')
       .leftJoin('item.order', 'order')
-      .where('order.status = :status', { status: OrderStatus.DELIVERED })
+      .where('order.status = :status', { status: OrderStatus.PAID })
       .select('COUNT(DISTINCT item.product)', 'count')
       .getRawOne();
 
@@ -140,7 +146,7 @@ export class ReportsService {
       .leftJoin('item.order', 'order')
       .leftJoin('item.product', 'product')
       .leftJoin('product.supplier', 'supplier')
-      .where('order.status = :status', { status: OrderStatus.DELIVERED })
+      .where('order.status = :status', { status: OrderStatus.PAID })
       .select('supplier.id', 'supplierId')
       .addSelect('supplier.name', 'supplierName')
       .addSelect('SUM(item.quantity * product.finalPrice)', 'totalRevenue')
@@ -160,7 +166,7 @@ export class ReportsService {
       .leftJoin('item.order', 'order')
       .leftJoin('item.product', 'product')
       .leftJoin('product.supplier', 'supplier')
-      .where('order.status = :status', { status: OrderStatus.DELIVERED })
+      .where('order.status = :status', { status: OrderStatus.PAID })
       .select('COUNT(DISTINCT supplier.id)', 'count')
       .getRawOne();
 
@@ -180,81 +186,100 @@ export class ReportsService {
       },
     };
   }
+  /**
+   * Get total delivered orders (that include this supplier's products)
+   * and totals (revenue from finalPrice, earnings from basePrice) for a date range.
+   */
+  async getSupplierEarnings(supplier: User, start?: Date, end?: Date) {
+    const supplierId = supplier.id;
 
-  // SUPPLIER EARNINGS (revenue, profit, etc.)
-  async getSupplierEarnings(supplierId: string, start?: Date, end?: Date) {
-    const query = this.orderItemRepo
+    // 1) Count distinct delivered orders containing this supplier's products
+    const orderCountQuery = this.orderRepo
+      .createQueryBuilder('order')
+      .leftJoin('order.items', 'item')
+      .leftJoin('item.product', 'product')
+      .where('product.supplierId = :supplierId', { supplierId });
+
+    if (start && end) {
+      orderCountQuery.andWhere('order.createdAt BETWEEN :start AND :end', {
+        start,
+        end,
+      });
+    }
+
+    const { totalOrders } = (await orderCountQuery
+      .select('COUNT(DISTINCT order.id)', 'totalOrders')
+      .getRawOne()) || { totalOrders: 0 };
+
+    // 2) Sum revenue and supplier earnings from order items (finalPrice & basePrice)
+    const itemsQuery = this.orderItemRepo
       .createQueryBuilder('item')
       .leftJoin('item.order', 'order')
       .leftJoin('item.product', 'product')
-      .where('product.supplierId = :supplierId', { supplierId })
-      .andWhere('order.status = :status', { status: OrderStatus.DELIVERED });
+      .where('product.supplierId = :supplierId', { supplierId });
 
     if (start && end) {
-      query.andWhere('order.createdAt BETWEEN :start AND :end', { start, end });
+      itemsQuery.andWhere('order.createdAt BETWEEN :start AND :end', {
+        start,
+        end,
+      });
     }
 
-    const result = await query
-      .select('SUM(item.quantity * product.finalPrice)', 'totalRevenue')
-      .addSelect('SUM(item.quantity * product.basePrice)', 'supplierEarnings')
-      .addSelect(
-        'SUM((product.finalPrice - product.basePrice) * item.quantity)',
-        'companyProfit',
-      )
-      .getRawOne();
+    const itemsResult = (await itemsQuery
+      .select('SUM(item.quantity * product.basePrice)', 'totalEarnings')
+      .getRawOne()) || { totalEarnings: 0 };
 
     return {
-      supplierId,
-      supplierEarnings: Number(result?.supplierEarnings || 0),
-      totalRevenue: Number(result?.totalRevenue || 0),
-      companyProfit: Number(result?.companyProfit || 0),
+      totalOrders: Number(totalOrders || 0),
+      totalEarnings: Number(itemsResult.totalEarnings || 0),
+      startDate: start ?? null,
+      endDate: end ?? null,
     };
   }
 
-  // SUPPLIER MONTHLY EARNINGS (breakdown by month, with pagination)
+  /**
+   * Monthly breakdown for supplier earnings for a year.
+   * Returns months 1..12 (fills missing months with zeros) and supports manual pagination.
+   */
   async getSupplierMonthlyEarnings(
-    supplierId: string,
+    supplier: User,
     year: number,
     page = 1,
-    pageSize = 6, // 6 months per page (2 pages total for 12 months)
+    pageSize = 6,
   ) {
+    const supplierId = supplier.id;
+
+    // Query per-month aggregates (only months that have data)
     const result = await this.orderItemRepo
       .createQueryBuilder('item')
       .leftJoin('item.order', 'order')
       .leftJoin('item.product', 'product')
       .where('product.supplierId = :supplierId', { supplierId })
-      .andWhere('order.status = :status', { status: OrderStatus.DELIVERED })
       .andWhere('YEAR(order.createdAt) = :year', { year })
       .select('MONTH(order.createdAt)', 'month')
-      .addSelect('SUM(item.quantity * product.finalPrice)', 'totalRevenue')
-      .addSelect('SUM(item.quantity * product.basePrice)', 'supplierEarnings')
-      .addSelect(
-        'SUM((product.finalPrice - product.basePrice) * item.quantity)',
-        'companyProfit',
-      )
+      .addSelect('COUNT(DISTINCT order.id)', 'totalOrders')
+      .addSelect('SUM(item.quantity * product.basePrice)', 'totalEarnings')
       .groupBy('month')
       .orderBy('month', 'ASC')
       .getRawMany();
 
-    // Fill missing months with zeros
+    // Build full 12-month array and fill missing months with zeros
     const allMonths = Array.from({ length: 12 }, (_, i) => {
       const month = i + 1;
       const found = result.find((r) => Number(r.month) === month);
       return {
         month,
-        totalRevenue: Number(found?.totalRevenue || 0),
-        supplierEarnings: Number(found?.supplierEarnings || 0),
-        companyProfit: Number(found?.companyProfit || 0),
+        totalOrders: Number(found?.totalOrders || 0),
+        totalEarnings: Number(found?.totalEarnings || 0),
       };
     });
 
-    // Apply pagination manually
-    const total = allMonths.length;
+    // Manual pagination
+    const total = allMonths.length; // 12
     const skip = (page - 1) * pageSize;
     const paginated = allMonths.slice(skip, skip + pageSize);
 
     return {
-      supplierId,
       year,
       data: paginated,
       meta: {
@@ -262,6 +287,32 @@ export class ReportsService {
         currentPage: page,
         lastPage: Math.ceil(total / pageSize),
       },
+    };
+  }
+
+  async getOverview() {
+    const totalUsers = await this.userRepo.count();
+    const pendingUsers = await this.userRepo.count({
+      where: { role: UserRole.PENDING },
+    });
+
+    const totalProducts = await this.productRepo.count();
+    const pendingProducts = await this.productRepo.count({
+      where: { status: ProductStatus.PENDING },
+    });
+
+    const totalOrders = await this.orderRepo.count();
+    const deliveredOrders = await this.orderRepo.count({
+      where: { status: OrderStatus.DELIVERED },
+    });
+
+    return {
+      totalUsers,
+      pendingUsers,
+      totalProducts,
+      pendingProducts,
+      totalOrders,
+      deliveredOrders,
     };
   }
 }

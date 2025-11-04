@@ -16,7 +16,7 @@ export class UpdateProductDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
-  price?: number;
+  basePrice?: number;
 
   @ApiPropertyOptional()
   @IsOptional()

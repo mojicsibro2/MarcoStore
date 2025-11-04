@@ -1,4 +1,3 @@
-// src/app/products/controllers/products.controller.ts
 import {
   Body,
   Controller,
@@ -8,8 +7,9 @@ import {
   Post,
   Delete,
   Query,
-  UploadedFiles,
   UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { CreateProductDto, PercentageDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
@@ -18,31 +18,103 @@ import { Roles } from 'src/app/auth/decorators/role.decorator';
 import { UserRole } from 'src/shared/entities/user.entity';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiConsumes,
   ApiOperation,
+  ApiQuery,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { User } from 'src/shared/entities/user.entity';
 import { ProductService } from '../services/product.service';
 import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Public } from 'src/shared/decorators/public.decorator';
-import { extname } from 'path';
-import { diskStorage } from 'multer';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { IsValidUUIDPipe } from 'src/shared/pipes/is-valid-uuid.pipe';
 import { FilterProductDto } from '../dto/filter-product.dto';
+import { ProductStatus } from 'src/shared/entities/product.entity';
 
 @ApiTags('Products')
 @Controller('products')
 export class ProductController {
   constructor(private readonly productsService: ProductService) {}
 
+  @Post()
   @ApiBearerAuth()
   @Roles(UserRole.SUPPLIER)
-  @ApiOperation({ summary: 'Supplier create product' })
-  @Post()
-  create(@Body() dto: CreateProductDto, @CurrentUser() user: User) {
-    return this.productsService.create(dto, user);
+  @ApiOperation({ summary: 'Supplier creates a new product with one image' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Create a new product with image upload',
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: 'Wireless Headphones' },
+        description: {
+          type: 'string',
+          example: 'Bluetooth over-ear headphones',
+        },
+        basePrice: { type: 'number', example: 120 },
+        stock: { type: 'number', example: 50 },
+        categoryId: { type: 'string', example: 'uuid-of-category' },
+        image: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      required: [
+        'name',
+        'description',
+        'basePrice',
+        'stock',
+        'categoryId',
+        'image',
+      ],
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Product created successfully.' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @UseInterceptors(
+    FileInterceptor('image', {
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith('image/')) {
+          return cb(
+            new BadRequestException('Only image files are allowed!'),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async createProduct(
+    @Body() dto: CreateProductDto,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() supplier: User,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Product image is required');
+    }
+
+    const product = await this.productsService.create(dto, supplier, file);
+    return {
+      success: true,
+      message: 'Product created successfully',
+      data: product,
+    };
+  }
+
+  @Roles(UserRole.SUPPLIER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List all products by supplier (paginated)' })
+  @Get('my')
+  getSupplierProducts(
+    @CurrentUser() user: User,
+    @Query() pagination: PaginationDto,
+  ) {
+    return this.productsService.findAllBySupplier(user, pagination);
   }
 
   @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
@@ -58,6 +130,26 @@ export class ProductController {
   @Get()
   findAllFiltered(@Query() filter: FilterProductDto) {
     return this.productsService.findAllFiltered(filter);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'List all products (with filters)',
+    description: 'Allows admin to view and filter products by status.',
+  })
+  @ApiQuery({
+    name: 'status',
+    enum: ProductStatus,
+    required: false,
+    description: 'Filter products by status (active, inactive, pending)',
+  })
+  @Get('admin')
+  async findAll(
+    @Query() pagination: PaginationDto,
+    @Query('status') status?: ProductStatus,
+  ) {
+    return this.productsService.adminFindAllFiltered(pagination, status);
   }
 
   @Public()
@@ -100,26 +192,13 @@ export class ProductController {
   }
 
   @ApiBearerAuth()
-  @Roles(UserRole.SUPPLIER)
-  @ApiOperation({ summary: 'Upload product images' })
-  @ApiConsumes('multipart/form-data')
-  @Post(':id/images')
-  @UseInterceptors(
-    FilesInterceptor('files', 5, {
-      storage: diskStorage({
-        destination: './uploads/temp', // temporary folder before cloud upload
-        filename: (req, file, cb) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
-        },
-      }),
-    }),
-  )
-  async uploadImages(
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Deapprove product' })
+  @Patch(':id/deapprove')
+  deapprove(
     @Param('id', IsValidUUIDPipe) id: string,
-    @UploadedFiles() files: Express.Multer.File[],
+    @CurrentUser() user: User,
   ) {
-    return this.productsService.uploadImages(id, files);
+    return this.productsService.deapprove(id, user);
   }
 }

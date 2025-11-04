@@ -1,39 +1,50 @@
-import axiosClient from './axiosClient';
+import axiosClient from "./axiosClient";
+import type { PaginatedResponse } from "./categoryService";
 
 export interface User {
   id: string;
   name: string;
   email: string;
   role: string;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
+  createdAt: string;
 }
 
 export const userService = {
-  async getUsers(page = 1, limit = 10, search = '') {
-    const res = await axiosClient.get<PaginatedResponse<User>>('/users', {
-      params: { page, limit, search },
-    });
-    return res.data;
+  async getUsers(params?: {
+    role?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResponse<User>> {
+    const res = await axiosClient.get(
+      `/users?page=${params?.page}&pageSize=${params?.limit}&role=${params?.role}`
+    );
+    const { data, meta } = res.data.data; // extract from nested object
+
+    return { data, meta }; //
+  },
+
+  async adminCreateUser(userData: {
+    name: string;
+    email: string;
+    password: string;
+    role: string;
+  }): Promise<User> {
+    const res = await axiosClient.post("/users/admin/create", userData);
+    return res.data.data;
   },
 
   async getAllUsers(): Promise<User[]> {
-    const res = await axiosClient.get('/admin/users');
-    return res.data;
+    const res = await axiosClient.get("/admin/users");
+    return res.data.data;
   },
 
-  async deleteUser(id: string) {
-    const res = await axiosClient.delete(`/users/${id}`);
-    return res.data;
+  async activateUser(id: string) {
+    const res = await axiosClient.patch(`/users/${id}/activate`);
+    return res.data.data;
   },
 
-  async updateUser(id: string, payload: Partial<User>) {
-    const res = await axiosClient.patch(`/users/${id}`, payload);
-    return res.data;
+  async deactivateUser(id: string) {
+    const res = await axiosClient.patch(`/users/${id}/deactivate`);
+    return res.data.data;
   },
 };

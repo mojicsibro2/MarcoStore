@@ -32,10 +32,6 @@ export const orderService = {
     return res.data;
   },
 
-  async create(data: { items: { productId: string; quantity: number }[] }): Promise<Order> {
-    const res = await axiosClient.post('/orders', data);
-    return res.data;
-  },
 
   async updateStatus(id: string, status: string): Promise<Order> {
     const res = await axiosClient.patch(`/orders/${id}/status`, { status });

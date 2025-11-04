@@ -16,7 +16,11 @@ export interface AuthResponse {
 export const authService = {
   async login(email: string, password: string): Promise<AuthResponse> {
     const res = await axiosClient.post('/auth/login', { email, password });
-    return res.data;
+    const data = res.data.data;
+    return {
+      access_token: data.accessToken,
+      user: data.user,
+    }
   },
 
   async register(data: {

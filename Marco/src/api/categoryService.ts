@@ -19,27 +19,27 @@ export interface PaginatedResponse<T> {
 
 export const categoryService = {
   async getAll(page = 1, pageSize = 10): Promise<PaginatedResponse<Category>> {
-    const res = await axiosClient.get(`/categories?page=${page}&pageSize=${pageSize}`);
-    return res.data;
+    const res = await axiosClient.get(`/category?page=${page}&pageSize=${pageSize}`);
+    return res.data.data;
   },
 
   async getById(id: string): Promise<Category> {
-    const res = await axiosClient.get(`/categories/${id}`);
+    const res = await axiosClient.get(`/category/${id}`);
     return res.data;
   },
 
   async create(data: { name: string; description?: string }): Promise<Category> {
-    const res = await axiosClient.post('/categories', data);
+    const res = await axiosClient.post('/category', data);
     return res.data;
   },
 
   async update(id: string, data: Partial<Category>): Promise<Category> {
-    const res = await axiosClient.put(`/categories/${id}`, data);
+    const res = await axiosClient.patch(`/category/${id}`, data);
     return res.data;
   },
 
   async delete(id: string) {
-    const res = await axiosClient.delete(`/categories/${id}`);
+    const res = await axiosClient.delete(`/category/${id}`);
     return res.data;
   },
 };

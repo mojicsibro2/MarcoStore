@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { productService, type Product } from '../api/productService';
+import { cartService, type PaginatedCartResponse } from '../api/cartService';
+import { setCart } from '../cart/cartSlice';
 import type { RootState } from '../app/store';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -10,8 +12,12 @@ export default function ProductDetailsPage() {
     const { id } = useParams<{ id: string }>();
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
+    const [quantity, setQuantity] = useState(1);
+    const [adding, setAdding] = useState(false);
+
     const auth = useSelector((state: RootState) => state.auth);
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -29,12 +35,24 @@ export default function ProductDetailsPage() {
         fetchProduct();
     }, [id]);
 
-    const handleCartAction = () => {
+    const handleCartAction = async () => {
         if (!auth.token) {
-            navigate('/login');
-        } else {
-            // TODO: integrate addToCart backend
-            console.log(`Add ${product?.name} to cart`);
+            navigate('/account');
+            return;
+        }
+
+        if (!product) return;
+
+        try {
+            setAdding(true);
+            const updatedCart: PaginatedCartResponse = await cartService.addItem(product.id, quantity);
+            dispatch(setCart(updatedCart));
+            alert(`${product.name} added to cart successfully!`);
+        } catch (err) {
+            console.error('Failed to add to cart:', err);
+            alert('Failed to add item to cart. Please try again.');
+        } finally {
+            setAdding(false);
         }
     };
 
@@ -43,15 +61,13 @@ export default function ProductDetailsPage() {
 
     return (
         <div>
-            {/* Navbar */}
             <Navbar />
 
-            {/* Product Details Section */}
             <div className="small-container single-product">
                 <div className="row">
                     <div className="col-2">
                         <img
-                            src={product['image'] || '/images/placeholder.png'}
+                            src={product.image?.imageUrl || '/images/wristwatch.jpeg'}
                             width="100%"
                             id="ProductImg"
                             alt={product.name}
@@ -62,7 +78,8 @@ export default function ProductDetailsPage() {
                             <Link to="/products">Home</Link> / {product.category?.name}
                         </p>
                         <h1>{product.name}</h1>
-                        <h4>${product.finalPrice ?? product.basePrice}</h4>
+                        <h4>€{product.finalPrice ?? product.basePrice}</h4>
+
                         <select>
                             <option>Select Size</option>
                             <option>XXL</option>
@@ -71,17 +88,22 @@ export default function ProductDetailsPage() {
                             <option>Medium</option>
                             <option>Small</option>
                         </select>
-                        <input type="number" defaultValue={1} />
 
-                        {auth.token ? (
-                            <button className="btn" onClick={handleCartAction}>
-                                Add to Cart
-                            </button>
-                        ) : (
-                            <button className="btn" onClick={() => navigate('/login')}>
-                                Login to Add to Cart
-                            </button>
-                        )}
+                        {/* Quantity input */}
+                        <input
+                            type="number"
+                            min={1}
+                            value={quantity}
+                            onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                        />
+
+                        <button
+                            className="btn"
+                            onClick={handleCartAction}
+                            disabled={adding}
+                        >
+                            {adding ? 'Adding...' : 'Add to Cart'}
+                        </button>
 
                         <h3>
                             Product Details <i className="fa fa-indent"></i>
@@ -97,7 +119,6 @@ export default function ProductDetailsPage() {
                 </div>
             </div>
 
-            {/* Footer */}
             <Footer />
         </div>
     );

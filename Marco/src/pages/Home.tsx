@@ -4,16 +4,20 @@ import { Link } from 'react-router-dom';
 import { productService, type Product } from '../api/productService';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import Pagination from '../components/Pagination';
 
 export default function HomePage() {
     const [products, setProducts] = useState<Product[]>([]);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const res = await productService.getAll(1, 8);
+                const res = await productService.getAll({ page, limit: 3 });
                 setProducts(res.data);
+                setTotalPages(res.meta.lastPage);
             } catch (err) {
                 console.error('Failed to load products:', err);
             } finally {
@@ -21,7 +25,7 @@ export default function HomePage() {
             }
         };
         fetchProducts();
-    }, []);
+    }, [page]);
 
     if (loading) return <p>Loading products...</p>;
 
@@ -52,16 +56,23 @@ export default function HomePage() {
                         <div className="col-4" key={product.id}>
                             <Link to={`/products/${product.id}`}>
                                 <img
-                                    src={product.image || '/images/placeholder.png'}
+                                    src={product.image?.imageUrl}
                                     alt={product.name}
                                 />
                             </Link>
                             <h4>{product.name}</h4>
-                            <p>${product.finalPrice ?? product.basePrice}</p>
+                            <p>€{product.finalPrice ?? product.basePrice}</p>
                         </div>
                     ))}
                 </div>
+                <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={(p) => setPage(p)}
+                />
             </div>
+
+
 
             {/* Footer */}
             <Footer />

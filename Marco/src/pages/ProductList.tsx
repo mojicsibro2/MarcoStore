@@ -14,7 +14,7 @@ export default function ProductListPage() {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const res = await productService.getAll(page, 8);
+                const res = await productService.getAll({ page, limit: 4 });
                 setProducts(res.data);
                 setTotalPages(res.meta.lastPage);
             } catch (err) {
@@ -44,12 +44,12 @@ export default function ProductListPage() {
                         <div className="col-4" key={product.id}>
                             <Link to={`/products/${product.id}`}>
                                 <img
-                                    src={product.image || '/images/placeholder.png'}
+                                    src={product.image?.imageUrl || '/images/wristwatch.jpeg'}
                                     alt={product.name}
                                 />
                             </Link>
                             <h4>{product.name}</h4>
-                            <p>${product.finalPrice ?? product.basePrice}</p>
+                            <p>€{product.finalPrice ?? product.basePrice}</p>
                         </div>
                     ))}
                 </div>

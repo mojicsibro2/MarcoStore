@@ -1,9 +1,9 @@
 // src/modules/cart/cartSlice.ts
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { Cart } from "../api/cartService";
+import type { PaginatedCartResponse } from "../api/cartService";
 
 interface CartState {
-  cart: Cart | null;
+  cart: PaginatedCartResponse | null;
 }
 
 const initialState: CartState = {
@@ -14,7 +14,7 @@ const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
-    setCart: (state, action: PayloadAction<Cart | null>) => {
+    setCart: (state, action: PayloadAction<PaginatedCartResponse | null>) => {
       state.cart = action.payload;
     },
     clearCart: (state) => {

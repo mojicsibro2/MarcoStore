@@ -1,25 +1,34 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import type { AppDispatch } from '../app/store';
-import { authService } from '../api/authService';
-import { setCredentials } from '../auth/authSlice';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import type { AppDispatch } from "../app/store";
+import { authService } from "../api/authService";
+import { setCredentials } from "../auth/authSlice";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+
+type FormData = {
+  name?: string;
+  email: string;
+  role?: string;
+  password: string;
+};
 
 // ✅ Validation Schemas
 const loginSchema = yup.object({
-    username: yup.string().required('Username is required'),
-    password: yup.string().required('Password is required'),
+    email: yup.string().email("Invalid email").required("Email is required"),
+    password: yup.string().required("Password is required"),
 });
 
 const registerSchema = yup.object({
-    username: yup.string().required('Username is required'),
-    email: yup.string().email().required('Email is required'),
-    password: yup.string().min(6).required('Password is required'),
+    name: yup.string().required("Name is required"),
+    email: yup.string().email("Invalid email").required("Email is required"),
+    role: yup.string().required("Role is required"),
+    password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
 });
 
 export default function AccountPage() {
@@ -32,31 +41,30 @@ export default function AccountPage() {
         handleSubmit,
         reset,
         formState: { errors },
-    } = useForm({
+    } = useForm<FormData>({
         resolver: yupResolver(isLogin ? loginSchema : registerSchema),
     });
 
-    // const toggleForm = () => {
-    //     setIsLogin(!isLogin);
-    //     reset();
-    // };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // ✅ Submit Handler
     const onSubmit = async (data: any) => {
         try {
             if (isLogin) {
                 const res = await authService.login(data.email, data.password);
-                dispatch(setCredentials({ user: res.user, token: res.access_token }));
-                navigate('/');
+                dispatch(
+                    setCredentials({
+                        user: res.user,
+                        token: res.access_token,
+                    })
+                );
+                navigate("/");
             } else {
                 await authService.register(data);
-                alert('Registration successful! Please login.');
+                alert("✅ Registration successful! Please login.");
                 setIsLogin(true);
                 reset();
             }
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Something went wrong');
+            alert(err.response?.data?.message || "❌ Something went wrong");
         }
     };
 
@@ -74,83 +82,55 @@ export default function AccountPage() {
                             <div className="form-container">
                                 <div className="form-btn">
                                     <span
-                                        onClick={() => setIsLogin(true)}
-                                        className={isLogin ? 'active' : ''}
+                                        onClick={() => {
+                                            setIsLogin(true);
+                                            reset();
+                                        }}
+                                        className={isLogin ? "active" : ""}
                                     >
                                         Login
                                     </span>
                                     <span
-                                        onClick={() => setIsLogin(false)}
-                                        className={!isLogin ? 'active' : ''}
+                                        onClick={() => {
+                                            setIsLogin(false);
+                                            reset();
+                                        }}
+                                        className={!isLogin ? "active" : ""}
                                     >
                                         Register
                                     </span>
                                 </div>
 
-                                {/* FORM */}
+                                {/* ✅ FORM */}
                                 <form onSubmit={handleSubmit(onSubmit)}>
                                     {!isLogin && (
-                                        <input
-                                            type="text"
-                                            placeholder="Username"
-                                            {...register('username')}
-                                        />
-                                    )}
-                                    {errors.username && (
-                                        <small className="error">{errors.username.message}</small>
-                                    )}
-
-                                    {!isLogin && (
                                         <>
-                                            <input
-                                                type="email"
-                                                placeholder="Email"
-                                                {...register('username')}
-                                            />
-                                            {errors.username && (
-                                                <small className="error">{errors.username.message}</small>
-                                            )}
+                                            {/* Name Field */}
+                                            <input type="text" placeholder="Name" {...register("name")} />
+                                            {errors.name && <small className="error">{errors.name.message}</small>}
+
+                                            {/* Role Field */}
+                                            <select {...register("role")}>
+                                                <option value="">-- Select Role --</option>
+                                                <option value="customer">Customer</option>
+                                                <option value="supplier">Supplier</option>
+                                            </select>
+                                            {errors.role && <small className="error">{errors.role.message}</small>}
                                         </>
                                     )}
 
-                                    <input
-                                        type="text"
-                                        placeholder="Username"
-                                        {...register('username')}
-                                    />
-                                    <input
-                                        type="password"
-                                        placeholder="Password"
-                                        {...register('password')}
-                                    />
-                                    {errors.password && (
-                                        <small className="error">{errors.password.message}</small>
-                                    )}
+                                    {/* Email Field */}
+                                    <input type="email" placeholder="Email" {...register("email")} />
+                                    {errors.email && <small className="error">{errors.email.message}</small>}
+
+                                    {/* Password Field */}
+                                    <input type="password" placeholder="Password" {...register("password")} />
+                                    {errors.password && <small className="error">{errors.password.message}</small>}
 
                                     <button type="submit" className="btn">
-                                        {isLogin ? 'Login' : 'Register'}
+                                        {isLogin ? "Login" : "Register"}
                                     </button>
-
-                                    {/* {isLogin && <a href="#">Forgot Password?</a>} */}
                                 </form>
-
-                                {/* <div className="switch">
-                                    <p>
-                                        {isLogin
-                                            ? "Don't have an account? "
-                                            : 'Already have an account? '}
-                                        <span
-                                            onClick={toggleForm}
-                                            style={{
-                                                color: '#ff523b',
-                                                cursor: 'pointer',
-                                                fontWeight: 600,
-                                            }}
-                                        >
-                                            {isLogin ? 'Register' : 'Login'}
-                                        </span>
-                                    </p>
-                                </div> */}
                             </div>
                         </div>
                     </div>

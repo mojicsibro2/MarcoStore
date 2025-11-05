@@ -1,1 +1,0 @@
-{"version":3,"file":"api-response.dto.js","sourceRoot":"","sources":["../../../src/shared/dto/api-response.dto.ts"],"names":[],"mappings":";;;AAAA,MAAa,cAAc;IAIzB,YAAY,UAAkB,YAAY,EAAE,IAAO;QACjD,IAAI,CAAC,OAAO,GAAG,OAAO,CAAC;QACvB,IAAI,CAAC,IAAI,GAAG,IAAI,CAAC;IACnB,CAAC;CACF;AARD,wCAQC"}

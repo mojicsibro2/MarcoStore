@@ -1,7 +1,0 @@
-export declare class CreateDeliveryDto {
-    name: string;
-    description?: string;
-    fee: number;
-    estimatedTime?: string;
-    isActive?: boolean;
-}
